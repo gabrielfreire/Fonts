@@ -127,17 +127,21 @@ Base.:*(ptr::Ptr) = dereference(ptr)
 Base.:*(T::DataType, ptr::Ptr) = dereference(T, ptr)
 
 fontnames = []
-function enum_fam_callback(lplf::ENUMLOGFONTA, lpntm::NEWTEXTMETRICA, font_type::DWORD, afont_count::LPARAM)
+function enum_fam_callback(lplf::Ptr{ENUMLOGFONTA}, lpntm::Ptr{NEWTEXTMETRICA}, font_type::DWORD, afont_count::LPARAM)
     # Store true type fonts
     if Int32(font_type) == FontType.TrueType
         if lplf != C_NULL
+            deref = unsafe_load(lplf)
+            println("$(deref.elfFullName) == $(deref.elfFullName) ?")
+            @show fieldoffset(ENUMLOGFONTA, 2) # out: 0x0000000000000028
+            fullname = unsafe_load(lplf, 2) # 2 is index for elfFullName | out: the whole ENUMLOGFONTA object without having loaded elfFullName
             font = Dict(
-                "name"=>lplf.elfFullName, 
-                "quality"=>lplf.elfLogFont.lfQuality, 
-                "weight"=>lplf.elfLogFont.lfWeight,
-                "faceName"=>lplf.elfLogFont.lfFaceName,
-                "fontPitchAndFamily"=>lplf.elfLogFont.lfPitchAndFamily,
-                "charSet"=>lplf.elfLogFont.lfCharSet
+                "name"=>deref.elfFullName, 
+                "quality"=>deref.elfLogFont.lfQuality, 
+                "weight"=>deref.elfLogFont.lfWeight,
+                "faceName"=>deref.elfLogFont.lfFaceName,
+                "fontPitchAndFamily"=>deref.elfLogFont.lfPitchAndFamily,
+                "charSet"=>deref.elfLogFont.lfCharSet
             )
             push!(fontnames, font)
         end
@@ -154,7 +158,7 @@ hwdn = ccall((:GetDesktopWindow, "User32"), HANDLE, ())
 hdc = ccall((:GetDC, "User32"), HANDLE, (HANDLE,), hwdn)
 
 # List available fonts
-lp_enum_fam_callback = @cfunction(enum_fam_callback, Cint, (Ref{ENUMLOGFONTA}, Ref{NEWTEXTMETRICA}, DWORD, LPARAM))
+lp_enum_fam_callback = @cfunction(enum_fam_callback, Cint, (Ptr{ENUMLOGFONTA}, Ptr{NEWTEXTMETRICA}, DWORD, LPARAM))
 res = ccall((:EnumFontFamiliesW, "Gdi32"), stdcall, Cint, (HANDLE, LPCSTR, HANDLE, LPARAM), hdc, C_NULL, lp_enum_fam_callback, [0,0,0])
 
 res == 0 && error("Something terrible has happened")
@@ -167,6 +171,7 @@ function display_fonts(n::Int)
     for f in fontnames
         if c <= n
             println("-----------------------------------------")
+            @show f["name"]
             haskey(FontPitchAndFamily, f["fontPitchAndFamily"]) && @show FontPitchAndFamily[f["fontPitchAndFamily"]]
             haskey(FontQuality, f["quality"])                   && @show FontQuality[f["quality"]]
             haskey(FontCharSet, f["charSet"])                   && @show FontCharSet[f["charSet"]]
