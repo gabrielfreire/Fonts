@@ -132,7 +132,6 @@ function enum_fam_callback(lplf::Ptr{ENUMLOGFONTA}, lpntm::Ptr{NEWTEXTMETRICA}, 
     if Int32(font_type) == FontType.TrueType
         if lplf != C_NULL
             deref = unsafe_load(lplf)
-            println("$(deref.elfFullName) == $(deref.elfFullName) ?")
             @show fieldoffset(ENUMLOGFONTA, 2) # out: 0x0000000000000028
             fullname = unsafe_load(lplf, 2) # 2 is index for elfFullName | out: the whole ENUMLOGFONTA object without having loaded elfFullName
             font = Dict(
