@@ -1,6 +1,7 @@
 Base.eval(:(have_color=true))
 module Font
 
+    export fonts_list
     include("api.jl")
     # Get Wind Handler
     const hwdn = GetDesktopWindow()
@@ -15,10 +16,7 @@ module Font
             "fullName"=>deref.elfFullName,
             "style"=>deref.elfStyle,
             "faceName"=>deref.elfLogFont.lfFaceName,
-            "quality"=>deref.elfLogFont.lfQuality, 
             "weight"=>deref.elfLogFont.lfWeight,
-            "fontPitchAndFamily"=>deref.elfLogFont.lfPitchAndFamily,
-            "charSet"=>deref.elfLogFont.lfCharSet,
             "fontType"=>font_type
         )
         push!(fontnames, font)
@@ -46,19 +44,16 @@ module Font
         for f in fontnames
             if debug
                 fontname = decode_str(f["fullName"])
+                facename = decode_str(f["faceName"])
+                style = decode_str(f["style"])
+                fonttype = haskey(FontType, f["fontType"]) && FontType[f["fontType"]]
+                weight = haskey(FontWeight, f["weight"]) && FontWeight[f["weight"]]
                 println("-----------------------------------------")
-                printstyled(" - $fontname - $(haskey(FontType, f["fontType"]) && FontType[f["fontType"]])\n", color=:light_green)
-                @show fontname
-                @show decode_str(f["style"])
-                @show decode_str(f["faceName"])
-                haskey(FontPitchAndFamily, f["fontPitchAndFamily"]) && @show FontPitchAndFamily[f["fontPitchAndFamily"]]
-                haskey(FontQuality, f["quality"])                   && @show FontQuality[f["quality"]]
-                haskey(FontCharSet, f["charSet"])                   && @show FontCharSet[f["charSet"]]
-                haskey(FontWeight, f["weight"])                     && @show FontWeight[f["weight"]]
+                printstyled(" - $fontname - $facename - $fonttype - $style - $weight\n", color=:light_green)
             else
-                fontname = decode_str(f["fullName"])
-                if !(fontname in fonts)
-                    push!(fonts, fontname)
+                facename = decode_str(f["faceName"])
+                if !(facename in fonts)
+                    push!(fonts, facename)
                 end
             end
         end
