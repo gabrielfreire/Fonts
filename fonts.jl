@@ -8,7 +8,6 @@ module Font
     # Get Wind Handler Context
     const hdc = GetDC(hwdn)
     fontnames = []
-
     function enum_callback(lplf::Ptr{ENUMLOGFONTA}, lpntm::Ptr{NEWTEXTMETRICA}, font_type::DWORD, afont_count::LPARAM)
         # Store true type fonts
         deref = unsafe_load(lplf)
