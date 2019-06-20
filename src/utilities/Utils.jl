@@ -1,5 +1,3 @@
-Base.eval(:(have_color=true))
-
 module Utils
 
 include("../libraries/Libraries.jl")
@@ -8,7 +6,7 @@ import .Libraries: Kernel32, Psapi, User32, Gdi32, Types
 
 include("fonts.jl")
 
-export getProcesses, isProcessRunning, fonts_list
+export getCurrentProcesses, isProcessRunning, fonts_list
 
 struct Process
     id::Int
@@ -39,7 +37,7 @@ function _getProcessName(processId::Types.DWORD)::Process
 end
 
 
-function getProcesses()::Vector{Process}
+function getCurrentProcesses()::Vector{Process}
     global processes
     aProcesses = Psapi.EnumProcesses()
     for proc in aProcesses
@@ -53,7 +51,7 @@ function getProcesses()::Vector{Process}
 end
 
 function isProcessRunning(pName::String)::Bool
-    _processes = [p.name for p in getProcesses()]
+    _processes = [p.name for p in getCurrentProcesses()]
     if findfirst(x -> x==pName, _processes) != nothing
         return true
     end
