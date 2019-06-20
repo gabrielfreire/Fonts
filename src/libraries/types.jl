@@ -1,6 +1,6 @@
+module Types
+
 const HANDLE = Ptr{Cvoid}
-const HMODULE = HANDLE
-const HINSTANCE = HMODULE
 const EnumFontProc = HANDLE
 const HWND = HANDLE
 const HDC = HANDLE
@@ -14,6 +14,12 @@ const LPCSTR = LPCWSTR
 const BOOL = Cint
 const LF_FACESIZE = 32
 const LF_FULLFACESIZE = 64
+
+# Process contants
+const PROC_SIZE = 1024
+const MAX_PATH = 260
+const PROCESS_QUERY_INFORMATION = 0x0400
+const PROCESS_VM_READ = 0x0010
 
 const FontPitchAndFamily = Dict(
     0 => "DEFAULT_PITCH",
@@ -128,3 +134,5 @@ struct NEWTEXTMETRICA
     ntmCellHeight::Cuint
     ntmAvgWidth::Cuint
 end
+
+end # module

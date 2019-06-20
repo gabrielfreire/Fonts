@@ -29,13 +29,13 @@ void PrintProcessNameAndID( DWORD processID )
             GetModuleBaseName( hProcess, hMod, szProcessName, 
                                sizeof(szProcessName)/sizeof(TCHAR) );
         }
+        // printf("%u, %u\n", processID, hMod);
     }
 
     // Print the process name and identifier.
 
-    printf("%u\n", hProcess);
-    // printf("%u\n", processID);
-    // _tprintf( TEXT("%s  (PID: %u)\n"), szProcessName, processID );
+    // printf("%u\n", hProcess);
+    _tprintf( TEXT("%s  (PID: %u)\n"), szProcessName, processID );
 
     // Release the handle to the process.
 
@@ -57,7 +57,7 @@ int main( void )
     // Calculate how many process identifiers were returned.
 
     cProcesses = cbNeeded / sizeof(DWORD);
-
+    // printf("%u\n", cProcesses);
     // Print the name and process identifier for each process.
 
     for ( i = 0; i < cProcesses; i++ )
