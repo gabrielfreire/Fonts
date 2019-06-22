@@ -4,9 +4,9 @@ Series of Julia Interfaces for Windows APIs like User32.dll, Gdi32.dll, Kernel32
 # Usage
 
 ## list fonts
-```julia
+```shell
 julia> include("src\\Windows.jl")
-julia> Windows.Utils.fonts_list()
+julia> Windows.fontsList()
 277-element Array{String,1}:        
  "System"                           
  "Terminal"                         
@@ -47,8 +47,8 @@ julia> Windows.Utils.fonts_list()
 ```
 
 ## List current processes
-```julia
-julia> Windows.Utils.getCurrentProcesses()
+```shell
+julia> Windows.processGetCurrent()
 118-element Array{Main.Windows.Utils.Process,1}:
  Main.Windows.Utils.Process(6532, "nvcontainer.exe")
  Main.Windows.Utils.Process(8448, "nvcontainer.exe")
@@ -86,4 +86,7 @@ julia> Windows.Utils.getCurrentProcesses()
  Main.Windows.Utils.Process(16368, "julia.exe")
  Main.Windows.Utils.Process(2268, "conhost.exe")
  Main.Windows.Utils.Process(17848, "julia.exe")
+
+ julia> Windows.processIsRunning("chrome.exe")
+true
 ```

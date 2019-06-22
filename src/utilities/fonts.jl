@@ -1,3 +1,6 @@
+using Windows
+using Windows.Libraries: Kernel32, Psapi, User32, Gdi32
+
 # Get Wind Handler
 const hwdn = User32.GetDesktopWindow()
 
@@ -19,13 +22,7 @@ function enum_callback(lplf::Ptr{Types.ENUMLOGFONTA}, lpntm::Ptr{Types.NEWTEXTME
     return convert(Cint, 1)::Cint
 end
 
-
-function decode_str(encoded::NTuple)::String
-    firstnull = findfirst(c->c==0, encoded)
-    transcode(String, collect(encoded[1:(firstnull !== nothing ? firstnull-1 : end)]))
-end
-
-function fonts_list(;debug::Bool=false)::Vector{String}
+function fontsList(;debug::Bool=false)::Vector{String}
     
     # List available fonts
     lp_enum_fam_callback = @cfunction(enum_callback, Cint, (Ptr{Types.ENUMLOGFONTA}, Ptr{Types.NEWTEXTMETRICA}, Types.DWORD, Types.LPARAM))
@@ -39,15 +36,15 @@ function fonts_list(;debug::Bool=false)::Vector{String}
     
     for f in fontnames
         if debug
-            fontname = decode_str(f["fullName"])
-            facename = decode_str(f["faceName"])
-            style = decode_str(f["style"])
+            fontname = Utils.decode_str(f["fullName"])
+            facename = Utils.decode_str(f["faceName"])
+            style = Utils.decode_str(f["style"])
             fonttype = haskey(Types.FontType, f["fontType"]) && Types.FontType[f["fontType"]]
             weight = haskey(Types.FontWeight, f["weight"]) && Types.FontWeight[f["weight"]]
             println("-----------------------------------------")
             printstyled(" - $fontname - $facename - $fonttype - $style - $weight\n", color=:light_green)
         else
-            facename = decode_str(f["faceName"])
+            facename = Utils.decode_str(f["faceName"])
             if !(facename in fonts)
                 push!(fonts, facename)
             end

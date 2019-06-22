@@ -1,6 +1,7 @@
 module Types
 
 const HANDLE = Ptr{Cvoid}
+const HMODULE = Ptr{HANDLE}
 const EnumFontProc = HANDLE
 const HWND = HANDLE
 const HDC = HANDLE
@@ -20,6 +21,12 @@ const PROC_SIZE = 1024
 const MAX_PATH = 260
 const PROCESS_QUERY_INFORMATION = 0x0400
 const PROCESS_VM_READ = 0x0010
+
+# Process
+struct Process
+    id::Int
+    name::String
+end
 
 const FontPitchAndFamily = Dict(
     0 => "DEFAULT_PITCH",

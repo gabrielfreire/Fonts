@@ -1,6 +1,6 @@
 module User32
 
-include("types.jl")
+using Windows.Types
 
 export GetDesktopWindow, GetDC
 

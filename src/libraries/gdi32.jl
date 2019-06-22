@@ -1,6 +1,6 @@
 module Gdi32
 
-include("types.jl")
+using Windows.Types
 
 export EnumFontFamiliesW
 

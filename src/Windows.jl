@@ -1,9 +1,9 @@
 Base.eval(:(have_color=true))
 module Windows
-
-include("libraries/Libraries.jl")
+include("Types.jl")
 include("utilities/Utils.jl")
-
-export Libraries, Utils
+include("Libraries.jl")
+include("utilities/processes.jl")
+include("utilities/fonts.jl")
 
 end # module

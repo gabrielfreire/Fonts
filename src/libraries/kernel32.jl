@@ -1,6 +1,6 @@
 module Kernel32
 
-include("types.jl")
+using Windows.Types
 
 export CloseHandle, OpenProcess
 

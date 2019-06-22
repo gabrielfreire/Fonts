@@ -1,61 +1,33 @@
 module Utils
 
-include("../libraries/Libraries.jl")
+using Windows.Types
 
-import .Libraries: Kernel32, Psapi, User32, Gdi32, Types
+export init
 
-include("fonts.jl")
+# Empty Pointer type initialization
+"""
+    init(t::Type)
+    cbNeeded    = init(DWORD)
+    hModule     = init(HMODULE)
+    lpDword     = init(LPDWORD)
+    ccall((:EnumProcessModules, "Psapi"), stdcall, Cint, 
+                                (HANDLE, HMODULE, DWORD, LPDWORD), handle, hModule, sizeof(hModule), lpDword)
+    hModule_result = hModule[1] # this will result in a Vector that has the HMODULE instance inside
+Initialize an empty pointer representation to a TYPE, this pointer can be passed
+as arguments in ccall functions that requires it.
 
-export getCurrentProcesses, isProcessRunning, fonts_list
-
-struct Process
-    id::Int
-    name::String
-end
+"""
+init(t::Type{Types.LPDWORD}) = [zero(Types.DWORD)]
+init(t::Type{Types.DWORD}) = [zero(Types.DWORD)]
+init(t::Type{Types.HMODULE}) = [C_NULL]
 
 function decode_str(encoded::Vector{Cwchar_t})::String
     firstnull = findfirst(c->c==0, encoded)
     transcode(String, collect(encoded[1:(firstnull !== nothing ? firstnull-1 : end)]))
 end
 
-processes = Process[]
-
-function _getProcessName(processId::Types.DWORD)::Process
-    pn = ""
-
-    hProcess = Kernel32.OpenProcess(processId)
-    if hProcess != C_NULL
-        hProcess, hMod = Psapi.EnumProcessModules(hProcess)
-        len, processName = Psapi.GetModuleBaseNameW(hProcess, hMod)
-        if len > 0
-            pn = decode_str(processName)
-        end
-    end
-    Kernel32.CloseHandle(hProcess)
-
-    return Process(processId, pn)
+function decode_str(encoded::NTuple)::String
+    firstnull = findfirst(c->c==0, encoded)
+    transcode(String, collect(encoded[1:(firstnull !== nothing ? firstnull-1 : end)]))
 end
-
-
-function getCurrentProcesses()::Vector{Process}
-    global processes
-    aProcesses = Psapi.EnumProcesses()
-    for proc in aProcesses
-        process = _getProcessName( proc )
-        if !isempty(process.name)
-            push!(processes, process)
-        end
-        
-    end
-    return processes
-end
-
-function isProcessRunning(pName::String)::Bool
-    _processes = [p.name for p in getCurrentProcesses()]
-    if findfirst(x -> x==pName, _processes) != nothing
-        return true
-    end
-    return false
-end
-
 end # module
