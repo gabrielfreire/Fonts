@@ -40,7 +40,7 @@ function EnumProcessModules(hProcess::HANDLE)::Tuple{HANDLE, HMODULE}
     
     enum = ccall((:EnumProcessModules, "Psapi"), stdcall, Cint, 
                             (HANDLE, Ref{HMODULE}, DWORD, LPDWORD), 
-                            hProcess, hMod, sizeof(hMod[]), cbNeeded)
+                            hProcess, hMod, sizeof(hMod), cbNeeded)
 
     enum == 0 && error("Error @ EnumProcessModules")
     return (hProcess, hMod[])
