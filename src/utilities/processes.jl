@@ -27,7 +27,7 @@ end
 
 
 function processGetCurrent()::Vector{Process}
-    processes = Types.Process[]
+    processes = Process[]
     aProcesses = Psapi.EnumProcesses()
     for procId::Types.DWORD in aProcesses
         process = _processById( procId )
