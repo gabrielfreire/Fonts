@@ -1,5 +1,6 @@
 module Ws2_32
 
+export gethostname
 function gethostname()::String
     hostname = Vector{Cchar}(undef, 128)
     ccall((:gethostname, "Ws2_32"), Int32,

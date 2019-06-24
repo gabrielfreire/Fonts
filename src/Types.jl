@@ -12,6 +12,7 @@ const WPARAM = Cint
 const LPARAM = Ptr{Cint}
 const LPCWSTR = Ptr{UInt16}
 const LPCSTR = LPCWSTR
+const LPSTR = Ptr{Cchar}
 const BOOL = Cint
 const LF_FACESIZE = 32
 const LF_FULLFACESIZE = 64
@@ -21,12 +22,6 @@ const PROC_SIZE = 1024
 const MAX_PATH = 260
 const PROCESS_QUERY_INFORMATION = 0x0400
 const PROCESS_VM_READ = 0x0010
-
-# Process
-struct Process
-    id::Int
-    name::String
-end
 
 const FontPitchAndFamily = Dict(
     0 => "DEFAULT_PITCH",
@@ -140,6 +135,12 @@ struct NEWTEXTMETRICA
     ntmSizeEM::Cuint
     ntmCellHeight::Cuint
     ntmAvgWidth::Cuint
+end
+
+struct SECURITY_ATTRIBUTES
+    nLength::DWORD
+    lpSecurityDescriptor::Ptr{Cvoid}
+    bInheritHandle::BOOL
 end
 
 end # module

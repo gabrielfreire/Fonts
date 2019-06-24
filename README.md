@@ -1,7 +1,23 @@
 # [W.I.P] Windows Julia Interface
-Series of Julia Interfaces for Windows APIs like User32.dll, Gdi32.dll, Kernel32.dll and Psapi.dll.
+Series of Julia Interfaces for Windows APIs like 
+- User32.dll (incomplete)
+- Gdi32.dll (incomplete)
+- Kernel32.dll (incomplete)
+- Psapi.dll. (incomplete)
+- Advapi32.dll. (incomplete)
 
-# Usage
+# Available capabilities
+- List installed fonts
+- List current process
+- check if a process is running by name
+- get hostname
+
+# Get hostname
+```julia
+using Windows.Libraries: Ws2_32
+println(Ws2_32.gethostname()) # out "hostname"
+```
+# Using the Utility functions
 
 ## list fonts
 ```shell
@@ -26,28 +42,11 @@ julia> Windows.fontsList()
  "Arial CYR"                        
  "Arial Greek"                      
  "Arial TUR"                        
- ⋮                                  
- "Rockwell Condensed"               
- "Rockwell"                         
- "Rockwell Extra Bold"              
- "Script MT Bold"                   
- "Showcard Gothic"                  
- "Snap ITC"                         
- "Stencil"                          
- "Tw Cen MT"                        
- "Tw Cen MT Condensed"              
- "Tw Cen MT Condensed Extra Bold"   
- "Tempus Sans ITC"                  
- "Viner Hand ITC"                   
- "Vivaldi"                          
- "Vladimir Script"                  
- "Wingdings 2"                      
- "Wingdings 3"                      
- "MT Extra"       
+ ⋮                    
 ```
 
 ## List current processes
-```shell
+```julia
 julia> Windows.processGetCurrent()
 118-element Array{Main.Windows.Utils.Process,1}:
  Main.Windows.Utils.Process(6532, "nvcontainer.exe")
@@ -69,24 +68,100 @@ julia> Windows.processGetCurrent()
  Main.Windows.Utils.Process(7248, "RuntimeBroker.exe")
  Main.Windows.Utils.Process(2728, "SkypeBackgroundHost.exe")
  ⋮
- Main.Windows.Utils.Process(9992, "chrome.exe")
- Main.Windows.Utils.Process(1068, "chrome.exe")
- Main.Windows.Utils.Process(9040, "chrome.exe")
- Main.Windows.Utils.Process(6296, "chrome.exe")
- Main.Windows.Utils.Process(11212, "python.exe")
- Main.Windows.Utils.Process(17308, "smartscreen.exe")
- Main.Windows.Utils.Process(18340, "Code.exe")
- Main.Windows.Utils.Process(12572, "Code.exe")
- Main.Windows.Utils.Process(17632, "Code.exe")
- Main.Windows.Utils.Process(12820, "Code.exe")
- Main.Windows.Utils.Process(12624, "Code.exe")
- Main.Windows.Utils.Process(10600, "CodeHelper.exe")
- Main.Windows.Utils.Process(7144, "conhost.exe")
- Main.Windows.Utils.Process(15432, "Code.exe")
- Main.Windows.Utils.Process(16368, "julia.exe")
- Main.Windows.Utils.Process(2268, "conhost.exe")
- Main.Windows.Utils.Process(17848, "julia.exe")
-
+# Is Chrome running ?
  julia> Windows.processIsRunning("chrome.exe")
 true
+```
+
+# Create a function to List Windows running processes yourself
+
+```julia
+using Windows
+using Windows.Libraries: Kernel32, Psapi, User32, Gdi32
+
+
+# Process
+struct Process
+    id::Int
+    name::String
+end
+
+function _processById(procId::Types.DWORD)::Process
+    pn = ""
+
+    hProcess = Kernel32.OpenProcess(procId)
+    if hProcess != C_NULL
+        hProcess, hModule = Psapi.EnumProcessModules(hProcess)
+        nameLength, processName = Psapi.GetModuleBaseNameW(hProcess, hModule)
+        if nameLength > 0
+            pn = Utils.decode_str(processName)
+        end
+    end
+    Kernel32.CloseHandle(hProcess)
+
+    return Process(procId, pn)
+end
+
+function processGetCurrent()::Vector{Process}
+    processes = Process[]
+    aProcesses = Psapi.EnumProcesses()
+    for procId in aProcesses
+        process = _processById( procId )
+        if !isempty(process.name)
+            push!(processes, process)
+        end
+        
+    end
+    return processes
+end
+```
+
+# Create a script to list fonts yourself
+```julia
+using Windows
+using Windows.Libraries: Kernel32, Psapi, User32, Gdi32
+
+# Get Wind Handler
+const hwdn = User32.GetDesktopWindow()
+
+# Get Wind Handler Context
+const hdc = User32.GetDC(hwdn)
+
+# array to store the font names
+fontnames = []
+
+# Callback to get font information
+# this callback is called by EnumFontFamiliesW for each font installed
+function enum_callback(lplf::Ptr{Types.ENUMLOGFONTA}, lpntm::Ptr{Types.NEWTEXTMETRICA}, font_type::Types.DWORD, afont_count::Types.LPARAM)
+    # Store true type fonts
+    deref = unsafe_load(lplf)
+    font = Dict(
+        "fullName"=>deref.elfFullName,
+        "style"=>deref.elfStyle,
+        "faceName"=>deref.elfLogFont.lfFaceName,
+        "weight"=>deref.elfLogFont.lfWeight,
+        "fontType"=>font_type
+    )
+    push!(fontnames, font)
+    return convert(Cint, 1)::Cint
+end
+
+function fontsList(;debug::Bool=false)::Vector{String}
+    
+    # callback
+    lp_enum_fam_callback = @cfunction(enum_callback, Cint, (Ptr{Types.ENUMLOGFONTA}, Ptr{Types.NEWTEXTMETRICA}, Types.DWORD, Types.LPARAM))
+    
+    # call enumfontFamilies and pass the callback
+    res = Gdi32.EnumFontFamiliesW(hdc, Ptr{UInt16}(C_NULL), lp_enum_fam_callback, Ptr{Cint}(0))
+    
+    res == 0 && error("Something terrible has happened @ fontslist()")
+    
+    # print all font names
+    for f in fontnames
+        facename = Utils.decode_str(f["faceName"])
+        println("- $facename")
+    end
+
+    return fonts
+end
 ```

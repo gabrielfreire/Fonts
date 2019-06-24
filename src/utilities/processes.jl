@@ -1,7 +1,15 @@
 using Windows
 using Windows.Libraries: Kernel32, Psapi, User32, Gdi32
 
-function _processById(procId::Types.DWORD)::Types.Process
+
+# Process
+struct Process
+    id::Int
+    name::String
+end
+
+
+function _processById(procId::Types.DWORD)::Process
     pn = ""
 
     hProcess = Kernel32.OpenProcess(procId)
@@ -14,11 +22,11 @@ function _processById(procId::Types.DWORD)::Types.Process
     end
     Kernel32.CloseHandle(hProcess)
 
-    return Types.Process(procId, pn)
+    return Process(procId, pn)
 end
 
 
-function processGetCurrent()::Vector{Types.Process}
+function processGetCurrent()::Vector{Process}
     processes = Types.Process[]
     aProcesses = Psapi.EnumProcesses()
     for procId::Types.DWORD in aProcesses
@@ -38,7 +46,7 @@ function processIsRunning(pName::String)::Bool
     end
     return false
 end
-function processIsRunning(p::Types.Process)::Bool
+function processIsRunning(p::Process)::Bool
     _processes = [p.name for p in processGetCurrent()]
     if findfirst(x -> x==p.name, _processes) != nothing
         return true
