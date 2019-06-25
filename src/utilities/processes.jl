@@ -1,7 +1,3 @@
-using Windows
-using Windows.Libraries: Kernel32, Psapi, User32, Gdi32
-
-
 # Process
 struct Process
     id::Int
@@ -9,18 +5,18 @@ struct Process
 end
 
 
-function _processById(procId::Types.DWORD)::Process
+function processGetById(procId::Int)::Process
     pn = ""
-
-    hProcess = Kernel32.OpenProcess(procId)
+    _procId = convert(Windows.Types.DWORD, procId)
+    hProcess = Windows.Libraries.Kernel32.OpenProcess(_procId)
     if hProcess != C_NULL
-        hProcess, hMod = Psapi.EnumProcessModules(hProcess)
-        len, processName = Psapi.GetModuleBaseNameW(hProcess, hMod)
+        hProcess, hMod = Windows.Libraries.Psapi.EnumProcessModules(hProcess)
+        len, processName = Windows.Libraries.Psapi.GetModuleBaseNameW(hProcess, hMod)
         if len > 0
-            pn = Utils.decode_str(processName)
+            pn = Windows.Utils.decode_str(processName)
         end
     end
-    Kernel32.CloseHandle(hProcess)
+    Windows.Libraries.Kernel32.CloseHandle(hProcess)
 
     return Process(procId, pn)
 end
@@ -28,9 +24,9 @@ end
 
 function processGetCurrent()::Vector{Process}
     processes = Process[]
-    aProcesses = Psapi.EnumProcesses()
-    for procId::Types.DWORD in aProcesses
-        process = _processById( procId )
+    aProcesses = Windows.Libraries.Psapi.EnumProcesses()
+    for procId::Windows.Types.DWORD in aProcesses
+        process = processGetById( procId )
         if !isempty(process.name)
             push!(processes, process)
         end

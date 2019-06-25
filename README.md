@@ -14,14 +14,15 @@ Series of Julia Interfaces for Windows APIs like
 
 # Get hostname
 ```julia
-using Windows.Libraries: Ws2_32
-println(Ws2_32.gethostname()) # out "hostname"
+using Windows
+println(Windows.gethostname()) 
+# "yourhostname"
 ```
 # Using the Utility functions
 
 ## list fonts
 ```shell
-julia> include("src\\Windows.jl")
+julia> using Windows
 julia> Windows.fontsList()
 277-element Array{String,1}:        
  "System"                           
@@ -48,29 +49,30 @@ julia> Windows.fontsList()
 ## List current processes
 ```julia
 julia> Windows.processGetCurrent()
-118-element Array{Main.Windows.Utils.Process,1}:
- Main.Windows.Utils.Process(6532, "nvcontainer.exe")
- Main.Windows.Utils.Process(8448, "nvcontainer.exe")
- Main.Windows.Utils.Process(9860, "svchost.exe")
- Main.Windows.Utils.Process(1524, "svchost.exe")
- Main.Windows.Utils.Process(10040, "sihost.exe")
- Main.Windows.Utils.Process(14976, "taskhostw.exe")
- Main.Windows.Utils.Process(9952, "Explorer.EXE")
- Main.Windows.Utils.Process(16904, "svchost.exe")
- Main.Windows.Utils.Process(12316, "DllHost.exe")
- Main.Windows.Utils.Process(7704, "StartMenuExperienceHost.exe")
- Main.Windows.Utils.Process(6408, "RuntimeBroker.exe")
- Main.Windows.Utils.Process(636, "SearchUI.exe")
- Main.Windows.Utils.Process(10912, "RuntimeBroker.exe")
- Main.Windows.Utils.Process(14464, "NVIDIA Web Helper.exe")
- Main.Windows.Utils.Process(8300, "conhost.exe")
- Main.Windows.Utils.Process(1436, "SettingSyncHost.exe")
- Main.Windows.Utils.Process(7248, "RuntimeBroker.exe")
- Main.Windows.Utils.Process(2728, "SkypeBackgroundHost.exe")
+130-element Array{Windows.Process,1}:
+ Windows.Process(1056, "nvcontainer.exe")
+ Windows.Process(9856, "nvcontainer.exe")
+ Windows.Process(8520, "svchost.exe")
+ Windows.Process(11828, "sihost.exe")
+ Windows.Process(11016, "svchost.exe")
+ Windows.Process(3168, "taskhostw.exe")
+ Windows.Process(10700, "Explorer.EXE")
+ Windows.Process(7116, "svchost.exe")
+ Windows.Process(7768, "DllHost.exe")
+ Windows.Process(13504, "StartMenuExperienceHost.exe")
+ Windows.Process(16440, "RuntimeBroker.exe")
+ Windows.Process(1248, "SearchUI.exe")
+ Windows.Process(15432, "RuntimeBroker.exe")
+ Windows.Process(5368, "NVIDIA Web Helper.exe")
+ Windows.Process(14184, "conhost.exe")
+ Windows.Process(1360, "SkypeBackgroundHost.exe")
+ Windows.Process(6828, "SettingSyncHost.exe")
  ⋮
-# Is Chrome running ?
- julia> Windows.processIsRunning("chrome.exe")
+
+ julia> Windows.processIsRunning("chrome.exe") # Is Chrome running ?
 true
+julia> Windows.processGetById(1056) # get a process by it's ID
+Windows.Process(1056, "nvcontainer.exe")
 ```
 
 # Create a function to List Windows running processes yourself
@@ -86,14 +88,14 @@ struct Process
     name::String
 end
 
-function _processById(procId::Types.DWORD)::Process
+function processGetById(procId::Int)::Process
     pn = ""
-
-    hProcess = Kernel32.OpenProcess(procId)
+    _procId = convert(Types.DWORD, procId)
+    hProcess = Kernel32.OpenProcess(_procId)
     if hProcess != C_NULL
-        hProcess, hModule = Psapi.EnumProcessModules(hProcess)
-        nameLength, processName = Psapi.GetModuleBaseNameW(hProcess, hModule)
-        if nameLength > 0
+        hProcess, hMod = Psapi.EnumProcessModules(hProcess)
+        len, processName = Psapi.GetModuleBaseNameW(hProcess, hMod)
+        if len > 0
             pn = Utils.decode_str(processName)
         end
     end
@@ -106,7 +108,7 @@ function processGetCurrent()::Vector{Process}
     processes = Process[]
     aProcesses = Psapi.EnumProcesses()
     for procId in aProcesses
-        process = _processById( procId )
+        process = processGetById( procId )
         if !isempty(process.name)
             push!(processes, process)
         end
@@ -121,11 +123,6 @@ end
 using Windows
 using Windows.Libraries: Kernel32, Psapi, User32, Gdi32
 
-# Get Wind Handler
-const hwdn = User32.GetDesktopWindow()
-
-# Get Wind Handler Context
-const hdc = User32.GetDC(hwdn)
 
 # array to store the font names
 fontnames = []
@@ -148,6 +145,12 @@ end
 
 function fontsList(;debug::Bool=false)::Vector{String}
     
+    # Get Wind Handler
+    const hwdn = User32.GetDesktopWindow()
+
+    # Get Wind Handler Context
+    const hdc = User32.GetDC(hwdn)
+
     # callback
     lp_enum_fam_callback = @cfunction(enum_callback, Cint, (Ptr{Types.ENUMLOGFONTA}, Ptr{Types.NEWTEXTMETRICA}, Types.DWORD, Types.LPARAM))
     
