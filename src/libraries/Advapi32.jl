@@ -1,14 +1,19 @@
 module Advapi32
 
-include("../Types.jl")
+using Windows.Types
 
 const SERVICE_STATUS_HANDLE = Types.HANDLE
-const LPHANDLER_FUNCTION = Types.HANDLE
+const LPHANDLER_FUNCTION = Types.HANDLE # callback = @cfunction(_callback, Cvoid, (DWORD,))
 const LPSERVICE_MAIN_FUNCTIONA = Types.HANDLE
 
 struct SERVICE_TABLE_ENTRYA
-    lpServiceName::Types.LPSTR
+    lpServiceName::String
     lpServiceMain::LPSERVICE_MAIN_FUNCTIONA # callback function cb(DWORD, *LPSTR)
+    function SERVICE_TABLE_ENTRYA(lpServiceName, lpServiceMain)
+        _lpServiceName = transcode(UInt16, lpServiceName)
+        _lpServiceName = pointer(_lpServiceName)
+        return new(_lpServiceName, lpServiceMain)
+    end
 end
 
 baremodule ServiceType
@@ -20,6 +25,7 @@ baremodule ServiceType
     SERVICE_WIN32_OWN_PROCESS=0x00000010
     SERVICE_INTERACTIVE_PROCESS=0x00000100
 end
+
 baremodule ServiceStatus
     SERVICE_PAUSED=0x00000007
     SERVICE_STOPPED=0x00000001
@@ -29,6 +35,7 @@ baremodule ServiceStatus
     SERVICE_CONTINUE_PENDING=0x00000005
     SERVICE_RUNNING=0x00000004
 end
+
 struct SERVICE_STATUS
     dwServiceType::Types.DWORD
     dwCurrentState::Types.DWORD
@@ -41,7 +48,16 @@ end
 
 const LPSERVICE_STATUS = Ptr{SERVICE_STATUS}
 
-
+"""
+    # This is the control handler, method that listens for control code/events and performs tasks
+    function MainHandler(dwControl::DWORD)::Nothing
+        # ...
+    end
+    MainHandlerC = @cfunction(MainHandler, Cvoid, (DWORD,))
+    lpServiceStartTable = SERVICE_TABLE_ENTRYA("MyService", MainHandlerC)
+    StartServiceCtrlDispatcherA(lpServiceStartTable)
+Start the main service handler
+"""
 function StartServiceCtrlDispatcherA(lpServiceStartTable::SERVICE_TABLE_ENTRYA)::Bool
     result = ccall((:StartServiceCtrlDispatcherA, "Advapi32"), stdcall, Cint, 
                 (SERVICE_TABLE_ENTRYA,), 
@@ -52,11 +68,12 @@ end
 
 """
     # This is the control handler, method that listens for control code/events and performs tasks
-    function _callback(dwControl::DWORD)::Nothing
+    function ServiceHandler(dwControl::DWORD)::Nothing
         # ...
     end
-    callback = @cfunction(_callback, Cvoid, (DWORD,))
+    callback = @cfunction(ServiceHandler, Cvoid, (DWORD,))
     RegisterServiceCtrlHandlerA("ServiceName", callback)
+Register the service handler
 """
 function RegisterServiceCtrlHandlerA(lpServiceName::String, callback::LPHANDLER_FUNCTION)::SERVICE_STATUS_HANDLE
     sn = transcode(UInt16, lpServiceName)
