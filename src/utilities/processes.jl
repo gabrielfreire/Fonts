@@ -4,8 +4,8 @@ struct Process
     name::String
 end
 
-
-function processGetById(procId::Int)::Process
+Integer = Union{Int, Int32, Int64}
+function processGetById(procId::Integer)::Process
     pn = ""
     _procId = convert(Windows.Types.DWORD, procId)
     hProcess = Windows.Libraries.Kernel32.OpenProcess(_procId)
