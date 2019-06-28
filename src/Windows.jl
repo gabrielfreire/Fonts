@@ -9,8 +9,8 @@ include("utilities/Utils.jl")
 include("Libraries.jl")
 
 # high-level API
-include("utilities/processes.jl")
-include("utilities/fonts.jl")
+include("api/processes.jl")
+include("api/fonts.jl")
 gethostname() = Libraries.Ws2_32.gethostname()
 
 end # module
