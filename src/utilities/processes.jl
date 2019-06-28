@@ -42,10 +42,5 @@ function processIsRunning(pName::String)::Bool
     end
     return false
 end
-function processIsRunning(p::Process)::Bool
-    _processes = [p.name for p in processGetCurrent()]
-    if findfirst(x -> x==p.name, _processes) != nothing
-        return true
-    end
-    return false
-end
+
+processIsRunning(p::Process) = processIsRunning(p.name)
